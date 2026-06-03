@@ -1,0 +1,740 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<link rel="icon" type="image/png" href="./favicon-96x96.png" sizes="96x96" />
+<link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+<link rel="shortcut icon" href="./favicon.ico" />
+<link rel="apple-touch-icon" sizes="180x180" href="./apple-touch-icon.png" />
+<meta name="apple-mobile-web-app-title" content="brisket" />
+<link rel="manifest" href="./site.webmanifest" />
+<title>George Cooper's Brisket Roundup</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #87ceeb; font-family: 'Georgia', serif; overflow: hidden; }
+  #app { position: fixed; inset: 0; }
+  #hud {
+    position: fixed; top: 12px; left: 12px; right: 12px;
+    display: flex; justify-content: space-between; pointer-events: none;
+    color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,.7);
+    font-size: 22px; font-weight: bold;
+  }
+  #hud .right { text-align: right; }
+  #title {
+    position: fixed; top: 8px; left: 50%; transform: translateX(-50%);
+    color: #fff8dc; text-shadow: 2px 2px 4px rgba(0,0,0,.7);
+    font-size: 26px; font-weight: bold; pointer-events: none;
+  }
+  #help {
+    position: fixed; bottom: 12px; left: 50%; transform: translateX(-50%);
+    color: #fff; text-shadow: 2px 2px 4px rgba(0,0,0,.7);
+    font-size: 16px; pointer-events: none; text-align: center;
+  }
+  #loader {
+    position: fixed; inset: 0;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    color: #fff8dc; z-index: 30; text-shadow: 2px 2px 4px rgba(0,0,0,.7);
+    background: linear-gradient(180deg, #87ceeb 0%, #f4d77a 70%, #e8a060 100%);
+  }
+  #loader .l-title { font-size: 44px; font-weight: bold; margin-bottom: 8px; text-align: center; }
+  #loader .l-sub { font-size: 18px; opacity: 0.85; margin-bottom: 32px; }
+  #loader .l-bar {
+    width: 360px; max-width: 70vw; height: 18px;
+    background: rgba(0,0,0,.35); border-radius: 9px;
+    border: 2px solid #fff8dc; overflow: hidden;
+  }
+  #loader .l-fill {
+    height: 100%; width: 0%;
+    background: linear-gradient(90deg, #ff5722, #ffd23f);
+    transition: width .15s ease-out;
+  }
+  #loader .l-status { font-size: 14px; margin-top: 8px; opacity: .85; }
+  #loader .l-pct { font-size: 24px; font-weight: bold; margin-top: 6px; }
+
+  #welcome {
+    position: fixed; inset: 0; z-index: 25;
+    display: flex; align-items: center; justify-content: flex-start;
+    pointer-events: none;
+  }
+  #welcome .panel {
+    margin-left: 8vw; padding: 30px 40px;
+    background: rgba(0,0,0,0.55); border-radius: 16px;
+    color: #fff8dc; text-shadow: 2px 2px 4px rgba(0,0,0,.7);
+    pointer-events: auto;
+    backdrop-filter: blur(4px);
+    border: 2px solid rgba(255,248,220,.4);
+    max-width: 480px;
+  }
+  #welcome h1 { font-size: 48px; margin: 0 0 8px 0; line-height: 1.05; color: #ffd23f; }
+  #welcome .tag { font-size: 18px; opacity: .9; margin-bottom: 20px; }
+  #welcome .hi { font-size: 13px; opacity: .8; margin-top: 18px; line-height: 1.5; }
+  #startBtn {
+    background: linear-gradient(180deg, #ff7043, #d84315);
+    color: #fff8dc; border: 2px solid #fff8dc; cursor: pointer;
+    font-family: inherit; font-size: 28px; font-weight: bold;
+    padding: 14px 50px; border-radius: 10px;
+    text-shadow: 2px 2px 4px rgba(0,0,0,.7);
+    box-shadow: 0 4px 16px rgba(0,0,0,.4);
+    transition: transform .1s, filter .1s;
+  }
+  #startBtn:hover { filter: brightness(1.15); transform: scale(1.04); }
+  #startBtn:active { transform: scale(0.98); }
+  #welcome.hidden { display: none; }
+
+  #toast {
+    position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    background: rgba(139, 69, 19, 0.85); color: #fff8dc;
+    padding: 16px 28px; border-radius: 12px; font-size: 22px; font-weight: bold;
+    pointer-events: none; opacity: 0; transition: opacity .3s;
+    text-shadow: 1px 1px 2px rgba(0,0,0,.5);
+    z-index: 20;
+  }
+  #toast.show { opacity: 1; }
+  #powerups {
+    position: fixed; top: 60px; right: 12px; width: 220px;
+    pointer-events: none; display: none;
+  }
+  #combo {
+    position: fixed; top: 50%; left: 24px; transform: translateY(-50%);
+    pointer-events: none; opacity: 0; transition: opacity .15s;
+    color: #fff8dc; text-shadow: 2px 2px 4px rgba(0,0,0,.7);
+    text-align: center;
+  }
+  #combo .combo-num {
+    font-size: 64px; font-weight: bold; line-height: 1;
+    color: #ffd23f;
+    text-shadow: 0 0 16px rgba(255,210,63,.7), 2px 2px 4px rgba(0,0,0,.7);
+  }
+  #combo .combo-text { font-size: 16px; margin-top: 4px; }
+  #combo .combo-bar {
+    width: 120px; height: 6px; margin-top: 6px;
+    background: rgba(0,0,0,.4); border-radius: 4px; overflow: hidden;
+  }
+  #combo .combo-fill {
+    height: 100%; background: linear-gradient(90deg, #ff5722, #ffd23f);
+    transition: width .12s linear;
+  }
+  #mission {
+    position: fixed; top: 60px; left: 12px;
+    background: rgba(46, 125, 50, .55); color: #fff8dc;
+    padding: 6px 10px; border-radius: 6px;
+    border: 1px solid #fff8dc;
+    pointer-events: none; max-width: 240px;
+  }
+  #mission .m-title { font-size: 11px; opacity: .7; letter-spacing: 1px; }
+  #mission .m-text { font-size: 14px; font-weight: bold; }
+  .score-popup {
+    position: fixed; pointer-events: none;
+    color: #fff8dc; font-size: 26px; font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0,0,0,.7);
+    transform: translate(-50%, -50%);
+    transition: opacity .15s linear;
+    z-index: 5;
+  }
+  #mute {
+    position: fixed; bottom: 12px; right: 12px;
+    background: rgba(0,0,0,.4); color: #fff8dc; border: 1px solid #fff8dc;
+    padding: 6px 12px; border-radius: 6px; cursor: pointer; font-size: 14px;
+  }
+  #mute:hover { background: rgba(0,0,0,.6); }
+  #friendly {
+    position: fixed; bottom: 12px; left: 12px;
+    background: rgba(139, 69, 19, .55); color: #fff8dc; border: 1px solid #fff8dc;
+    padding: 8px 14px; border-radius: 6px; cursor: pointer; font-size: 14px;
+    font-weight: bold;
+  }
+  #friendly.on {
+    background: rgba(46, 125, 50, .65);
+  }
+  #friendly:hover { filter: brightness(1.1); }
+  #quality {
+    position: fixed; bottom: 48px; right: 12px;
+    display: flex; gap: 4px; z-index: 12;
+    background: rgba(0,0,0,.35); border: 1px solid rgba(255,248,220,.7);
+    border-radius: 6px; padding: 4px;
+  }
+  #quality button {
+    background: rgba(0,0,0,.25); color: #fff8dc; border: 1px solid transparent;
+    padding: 5px 7px; border-radius: 4px; cursor: pointer; font: 12px Georgia, serif;
+  }
+  #quality button:hover { background: rgba(0,0,0,.5); }
+  #quality button.on { background: rgba(46, 125, 50, .8); border-color: #fff8dc; }
+
+  /* --- Secret/admin --- */
+  #passModal {
+    position: fixed; inset: 0; z-index: 50;
+    background: rgba(0,0,0,.65);
+    display: flex; align-items: center; justify-content: center;
+  }
+  #passModal.hidden { display: none; }
+  #passModal .box {
+    background: #1a1a1a; color: #fff; padding: 30px 36px;
+    border-radius: 12px; border: 2px solid #ffd23f;
+    box-shadow: 0 0 30px rgba(255,210,63,.4);
+    min-width: 320px;
+  }
+  #passModal h3 { margin: 0 0 14px 0; font-size: 20px; }
+  #passInput {
+    width: 100%; padding: 10px; font-size: 16px;
+    background: #0a0a0a; color: #fff;
+    border: 1px solid #555; border-radius: 6px;
+    box-sizing: border-box;
+    font-family: 'Courier New', monospace;
+  }
+  #passInput:focus { outline: 1px solid #ffd23f; border-color: #ffd23f; }
+  #passModal .err { color: #f55; font-size: 13px; margin-top: 8px; min-height: 16px; }
+  #passModal .actions { margin-top: 14px; display: flex; gap: 8px; justify-content: flex-end; }
+  #passModal button {
+    padding: 8px 16px; font-size: 14px; cursor: pointer;
+    background: #333; color: #fff; border: 1px solid #555; border-radius: 4px;
+  }
+  #passModal button.primary { background: #ffd23f; color: #000; border-color: #ffd23f; }
+
+  #admin {
+    position: fixed; bottom: 12px; right: 12px; width: 320px; max-height: 80vh;
+    background: rgba(0,0,0,.92); color: #fff;
+    border: 1px solid #ffd23f; border-radius: 10px;
+    padding: 0; font-size: 13px; z-index: 40;
+    box-shadow: 0 4px 16px rgba(255,210,63,.3);
+    font-family: 'Courier New', monospace;
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  #admin.hidden { display: none; }
+  #admin .head {
+    padding: 10px 12px; background: #181818;
+    color: #ffd23f; font-weight: bold; letter-spacing: 1px;
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #333;
+  }
+  #admin .head .x { cursor: pointer; padding: 0 8px; user-select: none; color: #888; }
+  #admin .head .x:hover { color: #fff; }
+  #admin .tabs {
+    display: flex; background: #0e0e0e; border-bottom: 1px solid #333;
+  }
+  #admin .tab {
+    flex: 1; padding: 8px 4px; text-align: center; cursor: pointer;
+    font-size: 11px; letter-spacing: 1px;
+    color: #888; user-select: none;
+    transition: background .1s, color .1s;
+  }
+  #admin .tab:hover { background: #1a1a1a; color: #fff; }
+  #admin .tab.active { background: #1a1a1a; color: #ffd23f; box-shadow: inset 0 -2px 0 #ffd23f; }
+  #admin .body { padding: 12px; overflow-y: auto; flex: 1; }
+  #admin .pane { display: none; }
+  #admin .pane.active { display: block; }
+  #admin .group {
+    margin-bottom: 12px; padding-bottom: 8px;
+    border-bottom: 1px solid #222;
+  }
+  #admin .group:last-child { border-bottom: 0; }
+  #admin .label { font-size: 11px; color: #888; margin-bottom: 4px; letter-spacing: 1px; }
+  #admin button {
+    background: #2a2a2a; color: #fff; border: 1px solid #555; border-radius: 4px;
+    padding: 6px 10px; font-size: 12px; margin: 2px; cursor: pointer;
+    font-family: inherit;
+    transition: background .1s, border-color .1s;
+  }
+  #admin button:hover { background: #444; border-color: #888; }
+  #admin button.on { background: #4a7d3a; border-color: #6aa84f; }
+  #admin button.danger { background: #5a1a1a; border-color: #aa3a3a; }
+  #admin button.danger:hover { background: #7a2a2a; }
+  #admin button.gold { background: #443a1a; border-color: #ffd23f; color: #ffd23f; }
+  #admin label { display: flex; gap: 6px; align-items: center; margin: 4px 0; font-size: 12px; }
+  #admin input[type=range] { flex: 1; accent-color: #ffd23f; }
+  #admin input[type=text] {
+    background: #0a0a0a; color: #fff; border: 1px solid #444; border-radius: 4px;
+    padding: 5px 8px; font-family: inherit; font-size: 12px; flex: 1;
+  }
+  #admin input[type=text]:focus { outline: 1px solid #ffd23f; border-color: #ffd23f; }
+  #admin .val { color: #ffd23f; min-width: 36px; text-align: right; }
+  #admin .row { display: flex; gap: 6px; align-items: center; margin: 4px 0; }
+  #admin .peers { max-height: 180px; overflow-y: auto; }
+  #admin .peer {
+    padding: 6px; margin: 3px 0;
+    background: #1a1a1a; border-radius: 4px;
+    display: flex; gap: 6px; flex-wrap: wrap; align-items: center;
+    font-size: 11px;
+  }
+  #admin .peer .who { flex: 1; }
+  #admin .peer .role { padding: 1px 5px; border-radius: 3px; font-size: 10px; }
+  #admin .peer .role.kid { background: #5a3a8a; }
+  #admin .peer .role.george { background: #8a5a3a; }
+  #admin .peer button { padding: 2px 6px; font-size: 10px; margin: 1px; }
+  #admin .status {
+    padding: 6px 10px; font-size: 11px;
+    background: #0a0a0a; border-radius: 4px; margin-bottom: 8px;
+    border-left: 2px solid #555;
+  }
+  #admin .status.connected { border-left-color: #6aa84f; }
+  #admin .hint { font-size: 10px; opacity: .55; margin-top: 8px; text-align: center; }
+  
+  /* Mobile / Controller support */
+  .joystick-container {
+    position: fixed; bottom: 24px; width: 120px; height: 120px;
+    background: radial-gradient(circle, rgba(0,0,0,0.3), rgba(0,0,0,0.5));
+    border-radius: 50%; border: 2px solid rgba(255,255,255,0.3);
+    touch-action: none; z-index: 10;
+    align-items: center; justify-content: center;
+    display: none;
+  }
+  .joystick-container.visible { display: flex; }
+  .joystick-stick {
+    position: absolute; width: 50px; height: 50px;
+    background: radial-gradient(circle, rgba(255,255,255,0.6), rgba(255,255,255,0.3));
+    border-radius: 50%; border: 2px solid rgba(255,255,255,0.8);
+    top: 50%; left: 50%; transform: translate(-50%, -50%);
+    transition: transform 0.05s ease-out;
+  }
+  #joystick-left { left: 24px; }
+  #mobile-actions {
+    position: fixed; right: 24px; bottom: 24px;
+    display: none; flex-direction: column; gap: 10px;
+    touch-action: none; z-index: 10;
+  }
+  .mobile-action {
+    width: 116px; height: 58px;
+    border-radius: 14px;
+    border: 2px solid rgba(255,255,255,0.72);
+    background: rgba(42, 80, 28, 0.62);
+    color: #fff8dc;
+    font: bold 20px Georgia, serif;
+    text-shadow: 1px 1px 3px rgba(0,0,0,.8);
+    box-shadow: inset 0 0 18px rgba(255,255,255,.12), 0 4px 12px rgba(0,0,0,.25);
+  }
+  .mobile-action:active {
+    transform: scale(.96);
+    background: rgba(85, 126, 45, 0.78);
+  }
+  #mobile-actions.visible { display: flex; }
+  
+  @media (max-width: 1024px) {
+    .joystick-container { display: flex; }
+  }
+  
+  #device-indicator {
+    position: fixed; top: 8px; right: 12px; font-size: 12px;
+    background: rgba(0,0,0,0.4); color: #fff8dc;
+    padding: 4px 8px; border-radius: 4px;
+    pointer-events: none; text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  }
+  #rotatePrompt {
+    display: none;
+    position: fixed; inset: 0; z-index: 60;
+    background: #87ceeb; color: #fff8dc;
+    align-items: center; justify-content: center; text-align: center;
+    padding: 28px; box-sizing: border-box;
+    text-shadow: 2px 2px 4px rgba(0,0,0,.7);
+  }
+  #rotatePrompt .big { font-size: 30px; font-weight: bold; margin-bottom: 8px; }
+  #rotatePrompt .small { font-size: 16px; opacity: .9; }
+  
+  @media (max-width: 768px) {
+    .joystick-container { display: flex; }
+  }
+  @media (max-width: 900px), (pointer: coarse) {
+    #title { display: none; }
+    #hud {
+      top: max(8px, env(safe-area-inset-top));
+      left: max(8px, env(safe-area-inset-left));
+      right: max(8px, env(safe-area-inset-right));
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 8px;
+      align-items: start;
+      font-size: 16px;
+      line-height: 1.15;
+      z-index: 14;
+    }
+    #hud > div:first-child {
+      max-width: 62vw;
+      background: rgba(0,0,0,.25);
+      border: 1px solid rgba(255,248,220,.35);
+      border-radius: 6px;
+      padding: 5px 7px;
+    }
+    #hud .right {
+      background: rgba(0,0,0,.25);
+      border: 1px solid rgba(255,248,220,.35);
+      border-radius: 6px;
+      padding: 5px 7px;
+      white-space: nowrap;
+    }
+    #mission {
+      top: calc(max(8px, env(safe-area-inset-top)) + 48px);
+      left: max(8px, env(safe-area-inset-left));
+      max-width: 210px;
+      padding: 5px 8px;
+      z-index: 14;
+    }
+    #mission .m-title { font-size: 9px; }
+    #mission .m-text { font-size: 13px; }
+    #device-indicator {
+      top: max(8px, env(safe-area-inset-top));
+      right: max(8px, env(safe-area-inset-right));
+      transform: translateY(42px);
+      font-size: 10px;
+      z-index: 13;
+    }
+    #help { display: none; }
+    #quality {
+      left: 50%;
+      right: auto;
+      bottom: max(12px, env(safe-area-inset-bottom));
+      transform: translateX(-50%);
+      z-index: 16;
+      gap: 3px;
+      padding: 3px;
+    }
+    #quality button {
+      font-size: 11px;
+      padding: 6px 7px;
+      min-width: 48px;
+    }
+    #mute, #friendly {
+      bottom: max(12px, env(safe-area-inset-bottom));
+      z-index: 16;
+      font-size: 12px;
+      padding: 8px 10px;
+      max-width: 160px;
+      white-space: nowrap;
+    }
+    #mute { right: max(10px, env(safe-area-inset-right)); }
+    #friendly { left: max(10px, env(safe-area-inset-left)); }
+    .joystick-container {
+      width: 112px;
+      height: 112px;
+      bottom: calc(max(62px, env(safe-area-inset-bottom)) + 12px);
+      z-index: 15;
+      background: radial-gradient(circle, rgba(0,0,0,0.28), rgba(0,0,0,0.45));
+    }
+    .joystick-stick {
+      width: 46px;
+      height: 46px;
+    }
+    #joystick-left { left: max(14px, env(safe-area-inset-left)); }
+    #mobile-actions {
+      display: flex;
+      right: max(14px, env(safe-area-inset-right));
+      bottom: calc(max(62px, env(safe-area-inset-bottom)) + 12px);
+      z-index: 15;
+    }
+    .mobile-action {
+      width: 112px;
+      height: 52px;
+      font-size: 18px;
+    }
+    #welcome {
+      align-items: center;
+      justify-content: flex-start;
+    }
+    #welcome .panel {
+      margin-left: max(18px, env(safe-area-inset-left));
+      padding: 18px 22px;
+      max-width: min(390px, 58vw);
+      border-radius: 10px;
+    }
+    #welcome h1 { font-size: 34px; }
+    #welcome .tag { font-size: 15px; margin-bottom: 14px; }
+    #welcome .hi { display: none; }
+    #startBtn {
+      font-size: 22px;
+      padding: 10px 34px;
+      border-radius: 8px;
+    }
+    #toast {
+      font-size: 17px;
+      padding: 11px 18px;
+      max-width: 70vw;
+    }
+  }
+  @media (max-width: 900px) and (orientation: portrait) {
+    #rotatePrompt { display: flex; flex-direction: column; }
+  }
+  @media (max-width: 900px) and (orientation: landscape) {
+    #hud { font-size: 14px; }
+    #hud > div:first-child { max-width: 48vw; }
+    #mission { top: calc(max(8px, env(safe-area-inset-top)) + 42px); }
+    .joystick-container {
+      width: 96px;
+      height: 96px;
+      bottom: calc(max(46px, env(safe-area-inset-bottom)) + 8px);
+    }
+    .joystick-stick {
+      width: 38px;
+      height: 38px;
+    }
+    #mobile-actions {
+      bottom: calc(max(46px, env(safe-area-inset-bottom)) + 8px);
+      gap: 8px;
+    }
+    .mobile-action {
+      width: 96px;
+      height: 44px;
+      font-size: 16px;
+      border-radius: 12px;
+    }
+    #quality button {
+      font-size: 10px;
+      padding: 5px 6px;
+      min-width: 42px;
+    }
+    #mute, #friendly {
+      font-size: 11px;
+      padding: 6px 9px;
+    }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="rotatePrompt">
+  <div class="big">Turn your phone sideways</div>
+  <div class="small">Landscape gives the joysticks and HUD room to breathe.</div>
+</div>
+<div id="device-indicator"></div>
+<div id="joystick-left" class="joystick-container">
+  <div class="joystick-stick"></div>
+</div>
+<div id="mobile-actions">
+  <button id="mobileJump" class="mobile-action" type="button">Jump</button>
+  <button id="mobileDance" class="mobile-action" type="button">Dance</button>
+</div>
+<div id="title">George Cooper's Brisket Roundup</div>
+<div id="hud">
+  <div>
+    Score: <span id="score">0</span> &nbsp; <span id="scoreLabel">Brisket</span>: <span id="brisket">0</span> <span id="scoreUnit">lbs</span>
+    &nbsp;&nbsp; Lvl <span id="level">1</span>
+    &nbsp;&nbsp; 🏆 <span id="highscore">0</span>
+  </div>
+  <div class="right">Time: <span id="time">0</span>s</div>
+</div>
+<div id="combo"></div>
+<div id="mission"></div>
+<div id="powerups"></div>
+<div id="help">WASD/D-Pad to move · Drag mouse to spin camera · Scroll/RB to zoom · SPACE/A to jump · G/X to dance · Touch joysticks on mobile</div>
+<div id="loader">
+  <div class="l-title">George Cooper's<br>Brisket Roundup</div>
+  <div class="l-sub">Firing up the smoker...</div>
+  <div class="l-bar"><div class="l-fill" id="loaderFill"></div></div>
+  <div class="l-pct"><span id="loaderPct">0</span>%</div>
+  <div class="l-status" id="loaderStatus">Booting</div>
+</div>
+
+<div id="welcome" class="hidden">
+  <div class="panel">
+    <h1>Howdy.</h1>
+    <div class="tag">Round up the kids before they ruin the brisket.</div>
+    <button id="startBtn">▶ START</button>
+    <div class="hi">WASD/D-Pad to move · Drag/RB to spin camera · SPACE/A to jump · G/X to dance · Catch kids for brisket</div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<button id="mute">🔊 Music</button>
+<button id="friendly">🔥 Brisket Mode</button>
+
+<div id="quality" aria-label="Quality">
+  <button data-quality="reallylow">Really Low</button>
+  <button data-quality="low" class="on">Low</button>
+  <button data-quality="medium">Medium</button>
+  <button data-quality="high">High</button>
+</div>
+
+<div id="passModal" class="hidden">
+  <div class="box">
+    <h3>Restricted</h3>
+    <input id="passInput" type="password" autocomplete="off" placeholder="password" />
+    <div class="err" id="passErr"></div>
+    <div class="actions">
+      <button id="passCancel">cancel</button>
+      <button id="passOk" class="primary">enter</button>
+    </div>
+  </div>
+</div>
+
+<div id="admin" class="hidden">
+  <div class="head">
+    ADMIN <span class="x" id="adminClose">×</span>
+  </div>
+  <div class="tabs">
+    <div class="tab active" data-pane="world">WORLD</div>
+    <div class="tab" data-pane="player">PLAYER</div>
+    <div class="tab" data-pane="server">SERVER</div>
+    <div class="tab" data-pane="cheats">CHEATS</div>
+  </div>
+  <div class="body">
+
+    <!-- WORLD -->
+    <div class="pane active" data-pane="world">
+      <div class="group">
+        <div class="label">SPAWN KIDS</div>
+        <button data-spawn="1">+1</button>
+        <button data-spawn="5">+5</button>
+        <button data-spawn="20">+20</button>
+        <button data-spawn="50">+50</button>
+        <button id="adminClear" class="danger">clear all</button>
+      </div>
+      <div class="group">
+        <div class="label">CAPS</div>
+        <label>Max kids
+          <input id="adminMax" type="range" min="10" max="200" value="30" />
+          <span class="val" id="adminMaxVal">30</span>
+        </label>
+        <label>AI George speed
+          <input id="adminSpeed" type="range" min="1" max="50" step="1" value="10" />
+          <span class="val" id="adminSpeedVal">1.0x</span>
+        </label>
+      </div>
+      <div class="group">
+        <div class="label">EFFECTS</div>
+        <button id="adminGoldenAll" class="gold">make all golden</button>
+        <button id="adminPanic">scare every kid</button>
+        <button id="adminCalm">calm every kid</button>
+      </div>
+    </div>
+
+    <!-- PLAYER -->
+    <div class="pane" data-pane="player">
+      <div class="group">
+        <div class="label">PLAY AS</div>
+        <button id="roleGeorge" class="on">George</button>
+        <button id="roleKid">Kid</button>
+      </div>
+      <div class="group">
+        <div class="label">CHEATS</div>
+        <button id="adminGodMode">God mode (off)</button>
+        <button id="adminBigPoints">+1000 score</button>
+        <button id="adminTeleport">teleport to spawn</button>
+      </div>
+      <div class="group">
+        <div class="label">POWERUPS</div>
+        <button data-pu="double">2x</button>
+        <button data-pu="triple">3x</button>
+        <button data-pu="mega">10x</button>
+        <button data-pu="speed">speed</button>
+        <button data-pu="magnet">magnet</button>
+      </div>
+    </div>
+
+    <!-- SERVER -->
+    <div class="pane" data-pane="server">
+      <div class="status" id="adminMpStatus">disconnected</div>
+      <div class="group">
+        <div class="label">CONNECT</div>
+        <div class="row">
+          <input id="adminMpUrl" type="text" placeholder="ws://host:9925/" />
+        </div>
+        <div class="row">
+          <input id="adminMpName" type="text" placeholder="display name" />
+        </div>
+        <div class="row">
+          <input id="adminMpRoom" type="text" placeholder="room name (optional)" />
+        </div>
+        <div>
+          <button id="adminMpQuick" class="gold">quick join</button>
+          <button id="adminMpConnect">connect</button>
+          <button id="adminMpDisconnect" class="danger">disconnect</button>
+        </div>
+      </div>
+      <div class="group">
+        <div class="label">SERVER LIST <button id="adminMpRefresh" style="float:right;font-size:10px;padding:2px 6px;">refresh</button></div>
+        <div class="peers" id="adminRoomList"><div style="opacity:.5;font-size:11px;">click refresh</div></div>
+      </div>
+      <div class="group">
+        <div class="label">PLAYERS</div>
+        <div class="peers" id="adminPeers"><div style="opacity:.5;font-size:11px;">connect to a server to see players</div></div>
+      </div>
+      <div class="group">
+        <div class="label">QUICK CHAT</div>
+        <div class="row">
+          <input id="adminChat" type="text" placeholder="say something" />
+          <button id="adminChatSend">send</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHEATS / TROLL -->
+    <div class="pane" data-pane="cheats">
+      <div class="group">
+        <div class="label">BROADCAST TROLL (everyone in server)</div>
+        <button data-tall="freeze">freeze all</button>
+        <button data-tall="banana">banana all</button>
+        <button data-tall="speedboost">boost all</button>
+        <button data-tall="gold">+100 gift all</button>
+      </div>
+      <div class="group">
+        <div class="label">MASS COMMANDS</div>
+        <button data-srv="spawnKids:5">srv spawn 5</button>
+        <button data-srv="spawnKids:20">srv spawn 20</button>
+        <button data-srv="clearKids" class="danger">srv clear</button>
+        <button data-srv="goldenAll" class="gold">srv all gold</button>
+      </div>
+    </div>
+
+  </div>
+  <div class="hint">M-M-N-N to toggle</div>
+</div>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js",
+    "three/addons/": "https://unpkg.com/three@0.160.0/examples/jsm/"
+  }
+}
+</script>
+<script>window.__PROD__ = true;</script>
+<script type="module" src="./main.min.js?v=33"></script>
+<script>
+if (window.__PROD__) {
+  (function () {
+    const blockKey = (e) => {
+      const k = e.key?.toLowerCase();
+      if (
+        e.key === 'F12' ||
+        (e.ctrlKey && e.shiftKey && (k === 'i' || k === 'j' || k === 'c')) ||
+        (e.ctrlKey && (k === 'u' || k === 's'))
+      ) {
+        e.preventDefault();
+        return false;
+      }
+    };
+    window.addEventListener('keydown', blockKey);
+    window.addEventListener('contextmenu', (e) => { e.preventDefault(); return false; });
+    window.addEventListener('dragstart', (e) => e.preventDefault());
+    document.addEventListener('selectstart', (e) => e.preventDefault());
+
+    const style = document.createElement('style');
+    style.textContent = `
+      html, body, #app, canvas {
+        -webkit-user-select: none; -moz-user-select: none;
+        -ms-user-select: none; user-select: none;
+        -webkit-user-drag: none;
+      }
+      img { pointer-events: none; -webkit-user-drag: none; }
+    `;
+    document.head.appendChild(style);
+
+    let warned = false;
+    setInterval(() => {
+      const threshold = 160;
+      const widthDiff = window.outerWidth - window.innerWidth;
+      const heightDiff = window.outerHeight - window.innerHeight;
+      if (widthDiff > threshold || heightDiff > threshold) {
+        if (!warned) {
+          warned = true;
+          document.body.innerHTML = '<div style="color:#fff;font-family:Georgia,serif;text-align:center;padding-top:30vh;font-size:24px;background:#333;height:100vh;">Please close DevTools to play.</div>';
+        }
+      }
+    }, 1500);
+
+    setInterval(() => { debugger; }, 100);
+  })();
+}
+</script>
+</body>
+</html>
