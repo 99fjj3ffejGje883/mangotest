@@ -1,7 +1,28 @@
 ﻿<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="100%" viewBox="0 0 1200 675" preserveAspectRatio="none">
   <title>George Cooper's Brisket Roundup</title>
   <foreignObject x="0" y="0" width="1200" height="675">
-    <body xmlns="http://www.w3.org/1999/xhtml" id="svg-body" style="margin:0;width:100vw;height:100vh;overflow:hidden;background:#87ceeb;"></body>
+    <body xmlns="http://www.w3.org/1999/xhtml" id="svg-body" style="margin:0;width:100vw;height:100vh;overflow:hidden;background:#87ceeb;">
+      <div id="app" style="position:fixed;inset:0;"></div>
+    </body>
   </foreignObject>
-  <script href="./main.svg.bundle.js?v=1" xlink:href="./main.svg.bundle.js?v=1"></script>
+  <script><![CDATA[
+    (function () {
+      var originalGetElementById = document.getElementById.bind(document);
+      function ensureApp() {
+        var app = originalGetElementById('app');
+        if (app) return app;
+        var body = originalGetElementById('svg-body') || document.documentElement;
+        app = document.createElementNS('http://www.w3.org/1999/xhtml', 'div');
+        app.id = 'app';
+        app.style.position = 'fixed';
+        app.style.inset = '0';
+        body.appendChild(app);
+        return app;
+      }
+      document.getElementById = function (id) {
+        return id === 'app' ? ensureApp() : originalGetElementById(id);
+      };
+    })();
+  ]]></script>
+  <script href="./main.svg.bundle.js?v=2" xlink:href="./main.svg.bundle.js?v=2"></script>
 </svg>
