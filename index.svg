@@ -8,6 +8,16 @@
   <script><![CDATA[
     (function () {
       var originalGetElementById = document.getElementById.bind(document);
+      var originalCreateElement = document.createElement.bind(document);
+      var htmlTags = {
+        canvas: true, div: true, button: true, input: true, span: true,
+        style: true, audio: true, img: true, p: true, label: true
+      };
+      document.createElement = function (tag, options) {
+        tag = String(tag).toLowerCase();
+        if (htmlTags[tag]) return document.createElementNS('http://www.w3.org/1999/xhtml', tag);
+        return originalCreateElement(tag, options);
+      };
       function ensureApp() {
         var app = originalGetElementById('app');
         if (app) return app;
