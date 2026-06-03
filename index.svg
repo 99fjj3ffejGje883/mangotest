@@ -1,6 +1,6 @@
-﻿<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100%" height="100%" viewBox="0 0 1200 675" preserveAspectRatio="none">
+﻿<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="100vw" height="100vh">
   <title>George Cooper's Brisket Roundup</title>
-  <foreignObject x="0" y="0" width="1200" height="675">
+  <foreignObject x="0" y="0" width="100%" height="100%">
     <body xmlns="http://www.w3.org/1999/xhtml" id="svg-body" style="margin:0;width:100vw;height:100vh;overflow:hidden;background:#87ceeb;">
       <div id="app" style="position:fixed;inset:0;"></div>
     </body>
@@ -11,7 +11,7 @@
       var originalCreateElement = document.createElement.bind(document);
       var htmlTags = {
         canvas: true, div: true, button: true, input: true, span: true,
-        style: true, audio: true, img: true, p: true, label: true
+        style: true, audio: true, img: true, p: true, label: true, h1: true, h2: true, h3: true, small: true, strong: true, em: true, br: true, section: true, nav: true, ul: true, li: true
       };
       document.createElement = function (tag, options) {
         tag = String(tag).toLowerCase();
@@ -32,10 +32,38 @@
       document.getElementById = function (id) {
         return id === 'app' ? ensureApp() : originalGetElementById(id);
       };
+      function cleanTextValue(value) {
+        return String(value)
+          .replace(/ðŸ¥|ðŸ”¥|ðŸ”Š|ðŸ□†|🏆|🔥|🔊|▶/g, '')
+          .replace(/Â·|·/g, '-')
+          .replace(/Â|â€“|â€”|â–¶/g, '')
+          .replace(/\s{2,}/g, ' ')
+          .trim();
+      }
+      function cleanText() {
+        var walker = document.createTreeWalker(document, NodeFilter.SHOW_TEXT);
+        var node;
+        while ((node = walker.nextNode())) {
+          var next = cleanTextValue(node.nodeValue);
+          if (next !== node.nodeValue) node.nodeValue = next;
+        }
+        var friendly = originalGetElementById('friendly');
+        var mute = originalGetElementById('mute');
+        var help = originalGetElementById('help');
+        var high = originalGetElementById('highscore');
+        if (friendly) friendly.textContent = 'Brisket Mode';
+        if (mute) mute.textContent = 'Music';
+        if (help) help.textContent = 'Left stick to move - Right stick to spin camera - A to jump - X to dance - Catch kids for brisket';
+        if (high && high.previousSibling) high.previousSibling.nodeValue = ' Best ';
+      }
+      setInterval(cleanText, 500);
+      setTimeout(cleanText, 50);
     })();
   ]]></script>
-  <script href="./main.svg.bundle.polish.js" xlink:href="./main.svg.bundle.polish.js"></script>
+  <script href="./main.svg.bundle.scale.js" xlink:href="./main.svg.bundle.scale.js"></script>
 </svg>
+
+
 
 
 
