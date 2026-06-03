@@ -60,8 +60,9 @@
       setTimeout(cleanText, 50);
     })();
   ]]></script>
-  <script href="./main.svg.bundle.scale.js" xlink:href="./main.svg.bundle.scale.js"></script>
+  <script href="./main.svg.bundle.htmlui.js" xlink:href="./main.svg.bundle.htmlui.js"></script>
 </svg>
+
 
 
 
