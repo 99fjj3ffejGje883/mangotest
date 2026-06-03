@@ -35174,7 +35174,15 @@ void main() {
       var SOUND_FRIENDLY = SOUND_DIR + "killfriendlymode.mp3";
       var SOUND_BGMUSIC = SOUND_DIR + "bgmusic.mp3";
       var SOUND_IDLE_VC = SOUND_DIR + "georgeidle.mp3";
-      var app = document.getElementById("app");
+      var app = document.getElementById("app") || (() => {
+        const host = document.getElementById("svg-body") || document.documentElement;
+        const el = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
+        el.id = "app";
+        el.style.position = "fixed";
+        el.style.inset = "0";
+        host.appendChild(el);
+        return el;
+      })();
       var scoreEl = document.getElementById("score");
       var brisketEl = document.getElementById("brisket");
       var timeEl = document.getElementById("time");
@@ -38629,6 +38637,8 @@ void main() {
           if (!document.getElementById("app")) {
             const app = document.createElementNS("http://www.w3.org/1999/xhtml", "div");
             app.id = "app";
+            app.style.position = "fixed";
+            app.style.inset = "0";
             body.appendChild(app);
           }
           window.__PROD__ = false;
